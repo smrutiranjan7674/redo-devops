@@ -1,0 +1,17 @@
+{
+  "name": "app-cricket",
+  "version": "1.0.0",
+  "description": "Live Cricket Scores Application",
+  "main": "static/js/main.js",
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint static/js/main.js",
+    "validate": "html-validate templates/index.html"
+  },
+  "devDependencies": {
+    "eslint": "^7.32.0",
+    "jest": "^27.0.6",
+    "jest-fetch-mock": "^3.0.3",
+    "html-validate": "^7.3.2"
+  }
+}

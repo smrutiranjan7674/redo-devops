@@ -1,0 +1,9 @@
+{
+    "extends": ["html-validate:recommended"],
+    "rules": {
+      "doctype-html": "error",
+      "no-missing-references": "error",
+      "void-style": ["error", {"style": "selfclosing"}]
+    }
+  }
+  

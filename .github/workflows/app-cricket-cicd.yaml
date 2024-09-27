@@ -1,0 +1,118 @@
+name: App Cricket CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test-backend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install backend dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Lint backend with flake8
+      run: |
+        flake8 .
+    
+    - name: Run backend tests
+      env:
+        API_KEY: ${{ secrets.API_KEY }}
+      run: |
+        pytest
+
+  lint-and-test-frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '14'
+
+    - name: Install frontend dependencies
+      run: |
+        npm install eslint
+        npm install jest
+        npm install html-validate
+
+    - name: Lint JavaScript
+      run: |
+        npx eslint static/js/main.js
+
+    - name: Validate HTML
+      run: |
+        npx html-validate templates/index.html
+
+    - name: Test frontend
+      run: |
+        echo "const fetchMock = require('jest-fetch-mock');
+        fetchMock.enableMocks();
+        
+        describe('fetchLiveScores', () => {
+          beforeEach(() => {
+            fetch.resetMocks();
+            document.body.innerHTML = '<div id="live-scores"></div>';
+          });
+        
+          test('updates DOM with match data', async () => {
+            const mockData = [
+              { 'team-1': 'Team A', 'team-2': 'Team B', score: '100/2', type: 'T20', status: 'Live' }
+            ];
+            fetch.mockResponseOnce(JSON.stringify(mockData));
+        
+            await fetchLiveScores();
+        
+            expect(document.getElementById('live-scores').innerHTML).toContain('Team A vs Team B');
+          });
+        
+          test('handles error', async () => {
+            fetch.mockReject(new Error('API error'));
+        
+            await fetchLiveScores();
+        
+            expect(document.getElementById('live-scores').innerHTML).toBe('<p>Error fetching live scores</p>');
+          });
+        });" > test.js
+        npx jest test.js
+
+  deploy:
+    needs: [build-and-test-backend, lint-and-test-frontend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install backend dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Deploy to production
+      env:
+        API_KEY: ${{ secrets.API_KEY }}
+      run: |
+        echo "Deploying to production..."
+        # Add your deployment commands here
+        # For example:
+        # gunicorn backend:app
